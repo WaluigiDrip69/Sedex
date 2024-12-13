@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSNES Emulator</title>
+    <script src="https://unpkg.com/jsnes/dist/jsnes.min.js"></script>
+    <style>
+        canvas {
+            display: block;
+            margin: 20px auto;
+            border: 1px solid black;
+        }
+        #controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center;">NES Emulator</h1>
+    <canvas id="screen" width="256" height="240"></canvas>
+    <div id="controls">
+        <button onclick="loadROM()">Load ROM</button>
+        <input type="file" id="romInput" accept=".nes" style="display: none;" />
+    </div>
+    <script>
+        const nes = new jsnes.NES({
+            onFrame: function (frameBuffer) {
+                const canvas = document.getElementById("screen");
+                const ctx = canvas.getContext("2d");
+                const imageData = ctx.createImageData(256, 240);
+                for (let i = 0; i < frameBuffer.length; i++) {
+                    imageData.data[i * 4] = frameBuffer[i] & 0xff; // Red
+                    imageData.data[i * 4 + 1] = (frameBuffer[i] >> 8) & 0xff; // Green
+                    imageData.data[i * 4 + 2] = (frameBuffer[i] >> 16) & 0xff; // Blue
+                    imageData.data[i * 4 + 3] = 0xff; // Alpha
+                }
+                ctx.putImageData(imageData, 0, 0);
+            },
+        });
+
+        function loadROM() {
+            const romInput = document.getElementById("romInput");
+            romInput.click();
+            romInput.addEventListener("change", (event) => {
+                const file = event.target.files[0];
+                const reader = new FileReader();
+                reader.onload = function () {
+                    nes.loadROM(new Uint8Array(reader.result));
+                    nes.frame();
+                    setInterval(() => nes.frame(), 1000 / 60); // Run frames at 60 FPS
+                };
+                reader.readAsArrayBuffer(file);
+            });
+        }
+    </script>
+</body>
+</html>
+
